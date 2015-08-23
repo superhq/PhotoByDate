@@ -24,7 +24,7 @@ class ProcessPhoto(threading.Thread):
         
         self.src = src
         self.dest = dest
-        
+        self.ext_list = ['.JPG','.MOV','.MP4','.TIF','.CR2','.AVI','.SWF','.MPG']
         
         
     def run(self):
@@ -32,6 +32,7 @@ class ProcessPhoto(threading.Thread):
         self.end_fun()
     def rename(self):
         self.max = sum(1 for x in self.list_regular_files(self.src))
+       
         self.count = 0
         for name in self.list_regular_files(self.src):
             g_lock.acquire()
@@ -46,8 +47,14 @@ class ProcessPhoto(threading.Thread):
                 break
            
             self.count = self.count + 1
-            self._rename(name)
-            self.update_progress(self.count,self.max)
+            
+            #print(name)
+            (root,ext) = (os.path.splitext(name))#得到后缀
+            if ext.upper() in self.ext_list:
+                self._rename(name)
+                self.update_progress(self.count,self.max)
+        
+           
             
     def _rename(self,name):
         (folder,fname) = get_original_time2(name)
@@ -58,6 +65,10 @@ class ProcessPhoto(threading.Thread):
         new_name = os.path.join(dest_folder,fname)
         src_name = os.path.join(self.src,name)
         
+        
+        if os.path.exists(new_name):
+            self.output_fun('已存在：%s'%(new_name,))
+            return
         #拷贝文件及属性
         shutil.copy2(src_name,new_name)
         self.output_fun('[%d/%d] 拷贝 %s 到  %s'%(self.count,self.max,src_name,new_name))
